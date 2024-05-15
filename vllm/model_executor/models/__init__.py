@@ -1,5 +1,9 @@
 import importlib
 from typing import Dict, List, Optional, Type
+from .t5 import T5ForVLLM
+from .t5_kv_cache import T5ForVLLMWithCache  # Corrected from T5WithKVCache
+from .t5_vllm_optimized_cache import T5ForVLLMWithDistributedCache
+from .llama_for_vllm import LLaMAForVLLM
 
 import torch.nn as nn
 
@@ -10,6 +14,7 @@ logger = init_logger(__name__)
 
 # Architecture -> (module, class).
 _MODELS = {
+    
     "AquilaModel": ("llama", "LlamaForCausalLM"),
     "AquilaForCausalLM": ("llama", "LlamaForCausalLM"),  # AquilaChat2
     "BaiChuanForCausalLM": ("baichuan", "BaiChuanForCausalLM"),  # baichuan-7b
@@ -54,6 +59,11 @@ _MODELS = {
     "StableLmForCausalLM": ("stablelm", "StablelmForCausalLM"),
     "Starcoder2ForCausalLM": ("starcoder2", "Starcoder2ForCausalLM"),
     "XverseForCausalLM": ("xverse", "XverseForCausalLM"),
+    "T5ForCausalLM": ("t5", "T5ForVLLM"),
+    "T5WithKVCache": ("t5_kv_cache", "T5ForVLLMWithCache"),
+    "T5WithOptimizedKVCache": ("t5_vllm_optimized_cache", "T5ForVLLMWithDistributedCache"),
+    "Llama7BForCausalLM": ("llama_for_vllm", "LLaMAForVLLM"),  # New entry for LLaMA 7B
+
 }
 
 # Architecture -> type.
@@ -79,6 +89,8 @@ class ModelRegistry:
 
     @staticmethod
     def load_model_cls(model_arch: str) -> Optional[Type[nn.Module]]:
+        print(f"Loading model class for architecture: {model_arch}")  # Debug statement
+
         if model_arch in _OOT_MODELS:
             return _OOT_MODELS[model_arch]
         if model_arch not in _MODELS:
