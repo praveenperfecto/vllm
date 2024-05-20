@@ -8,13 +8,15 @@ from tqdm import tqdm
 
 from .model import ModelArgs, Transformer
 
+
+
 class LLaMA:
 
-    def __init__(self, model: Transformer, tokenizer: SentencePieceProcessor, model_args: ModelArgs):
+    def __init__(self, model, tokenizer, model_args):
         self.model = model
         self.tokenizer = tokenizer
         self.args = model_args
-        self.device = model_args.device  # Storing device as instance variable
+        self.device = model_args.device
 
     @staticmethod
     def build(checkpoints_dir: str, tokenizer_path: str, load_model: bool, max_seq_len: int, max_batch_size: int, device: str):
@@ -30,7 +32,7 @@ class LLaMA:
         with open(Path(checkpoints_dir) / "params.json", "r") as f:
             params = json.loads(f.read())
 
-        model_args: ModelArgs = ModelArgs(
+        model_args = ModelArgs(
             max_seq_len=max_seq_len,
             max_batch_size=max_batch_size,
             device=device,
@@ -49,12 +51,23 @@ class LLaMA:
         model = Transformer(model_args).to(device)
 
         if load_model:
+            print(f"Checkpoint keys: {checkpoint.keys()}")
             # The only unmatched key in the checkpoint is rope.freqs. Remove it
             del checkpoint['rope.freqs']
+            print("Loading state dict into model")
+            print(f"Model's state_dict keys: {model.state_dict().keys()}")
+            
+            # Print shapes of weights in the checkpoint and model
+            for key in checkpoint.keys():
+                if key in model.state_dict().keys():
+                    print(f"Checkpoint key {key} shape: {checkpoint[key].shape}")
+                    print(f"Model key {key} shape: {model.state_dict()[key].shape}")
+            
             model.load_state_dict(checkpoint, strict=True)
             print(f"Loaded state dict in {time.time() - prev_time:.2f}s")
         
         return LLaMA(model, tokenizer, model_args)
+
 
     def text_completion(self, prompts: list[str], temperature: float = 0.6, top_p: float = 0.9, max_gen_len: Optional[int] = None):
         if max_gen_len is None:

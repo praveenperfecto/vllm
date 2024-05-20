@@ -27,7 +27,3 @@ class LLaMAForVLLM(torch.nn.Module):
         pad_token_id = self.tokenizer.pad_id()
         filtered_ids = [id for id in generated_ids if id != pad_token_id]
         return self.tokenizer.decode(filtered_ids)
-
-
-
-
